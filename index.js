@@ -110,43 +110,87 @@ async function sendMessage(to, text) {
   }
 }
 
-// ✅ Send interactive buttons for Language selection
+// // ✅ Send interactive buttons for Language selection
+// async function sendLanguageSelection(to) {
+//   try {
+//     await axios.post(
+//       `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+//       {
+//         messaging_product: "whatsapp",
+//         to,
+//         type: "interactive",
+//         interactive: {
+//           type: "button",
+//           body: {
+//             text: "🌐 Please select your preferred language:",
+//           },
+//           action: {
+//             buttons: [
+//               {
+//                 type: "reply",
+//                 reply: {
+//                   id: "lang_english",
+//                   title: "English",
+//                 },
+//               },
+//               {
+//                 type: "reply",
+//                 reply: {
+//                   id: "lang_hindi",
+//                   title: "हिंदी",
+//                 },
+//               },
+//             ],
+//           },
+//         },
+//       },
+//       { headers: { Authorization: `Bearer ${META_TOKEN}` } }
+//     );
+//     console.log("✅ Language selection sent!");
+//   } catch (err) {
+//     console.error(
+//       "❌ Error sending interactive message:",
+//       err.response?.data || err.message
+//     );
+//   }
+// }
+
+// ✅ API to send manual message via Postman
+
 async function sendLanguageSelection(to) {
   try {
-    await axios.post(
-      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "interactive",
-        interactive: {
-          type: "button",
-          body: {
-            text: "🌐 Please select your preferred language:",
-          },
-          action: {
-            buttons: [
-              {
-                type: "reply",
-                reply: {
-                  id: "lang_english",
-                  title: "English",
-                },
-              },
-              {
-                type: "reply",
-                reply: {
-                  id: "lang_hindi",
-                  title: "हिंदी",
-                },
-              },
-            ],
-          },
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: {
+          text: "🌐 Please select your preferred language:",
+        },
+        action: {
+          buttons: [
+            {
+              type: "reply",
+              reply: { id: "lang_english", title: "English" },
+            },
+            {
+              type: "reply",
+              reply: { id: "lang_hindi", title: "हिंदी" },
+            },
+          ],
         },
       },
+    };
+
+    await axios.post(
+      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
       { headers: { Authorization: `Bearer ${META_TOKEN}` } }
     );
-    console.log("✅ Language selection sent!");
+
+    console.log("✅ Interactive buttons sent to:", to);
   } catch (err) {
     console.error(
       "❌ Error sending interactive message:",
@@ -155,7 +199,6 @@ async function sendLanguageSelection(to) {
   }
 }
 
-// ✅ API to send manual message via Postman
 app.post("/send", async (req, res) => {
   const { to, message } = req.body;
 
