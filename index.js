@@ -142,14 +142,26 @@ async function sendMessage(to, text) {
 // ✅ Webhook for incoming messages
 app.post("/webhook", async (req, res) => {
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+
   if (message) {
     const from = message.from; // Customer number
-    const msg = message.text?.body; // Message body
+    const msg = message.text?.body?.toLowerCase(); // Message body in lowercase
     console.log("Incoming:", from, msg);
 
-    // Example: reply back
-    await sendMessage(from, `You said: ${msg}`);
+    let reply;
+
+    if (msg.includes("hii") || msg.includes("hi")) {
+      reply = "Hello 👋, how are you? How can I help you?";
+    } else if (msg.includes("order")) {
+      reply = "Sure ✅, please provide your order ID or details.";
+    } else {
+      reply = "Sorry, I didn't understand. Type 'hii' or 'order' to start.";
+    }
+
+    // Send reply
+    await sendMessage(from, reply);
   }
+
   res.sendStatus(200);
 });
 
