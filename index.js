@@ -130,51 +130,170 @@ app.post("/send", async (req, res) => {
   res.json({ success: true, to, message });
 });
 
+// // ✅ Webhook for incoming messages
+// app.post("/webhook", async (req, res) => {
+//   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+
+//   if (message) {
+//     const from = message.from;
+
+//     // Case 1: User clicked a button
+//     if (message.type === "interactive") {
+//       const buttonReply = message.interactive?.button_reply;
+//       if (buttonReply) {
+//         if (buttonReply.id === "lang_english") {
+//           await sendMessage(
+//             from,
+//             "✅ You selected English. How can I help you?"
+//           );
+//         } else if (buttonReply.id === "lang_hindi") {
+//           await sendMessage(
+//             from,
+//             "✅ आपने हिंदी चुना। मैं आपकी कैसे मदद कर सकता हूँ?"
+//           );
+//         }
+//       }
+//     }
+//     // Case 2: User sent a text message
+//     else {
+//       const msg = message.text?.body?.toLowerCase();
+//       console.log("Incoming:", from, msg);
+
+//       if (msg.includes("language")) {
+//         await sendLanguageSelection(from); // send interactive buttons
+//       } else if (msg.includes("hii") || msg.includes("hi")) {
+//         await sendMessage(
+//           from,
+//           "Hello 👋, type 'language' to choose Hindi/English."
+//         );
+//       } else if (msg.includes("order")) {
+//         await sendMessage(
+//           from,
+//           "Sure ✅, please provide your order ID or details."
+//         );
+//       } else {
+//         await sendMessage(
+//           from,
+//           "Sorry, I didn't understand. Type 'language', 'hii', or 'order' to start."
+//         );
+//       }
+//     }
+//   }
+
+//   res.sendStatus(200);
+// });
+
 // ✅ Webhook for incoming messages
 app.post("/webhook", async (req, res) => {
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
   if (message) {
     const from = message.from;
+    const profileName =
+      req.body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name ||
+      "User";
 
-    // Case 1: User clicked a button
+    // Case 1: User clicked an interactive option
     if (message.type === "interactive") {
+      // ✅ Language selection
       const buttonReply = message.interactive?.button_reply;
       if (buttonReply) {
         if (buttonReply.id === "lang_english") {
           await sendMessage(
             from,
-            "✅ You selected English. How can I help you?"
+            "✅ You selected English.\nType 'choose' to see options."
           );
         } else if (buttonReply.id === "lang_hindi") {
           await sendMessage(
             from,
-            "✅ आपने हिंदी चुना। मैं आपकी कैसे मदद कर सकता हूँ?"
+            "✅ आपने हिंदी चुना।\n'choose' लिखें विकल्प देखने के लिए।"
           );
         }
       }
+
+      // ✅ List selection
+      const listReply = message.interactive?.list_reply;
+      if (listReply) {
+        console.log("📌 User selected:", listReply);
+
+        if (listReply.id === "your_name") {
+          await sendMessage(from, `✅ Your name is ${profileName}`);
+        } else if (listReply.id === "order_1") {
+          await sendMessage(from, "📦 Order #123 is still pending.");
+        } else if (listReply.id === "order_2") {
+          await sendMessage(from, "✅ Order #124 was delivered successfully.");
+        }
+      }
     }
+
     // Case 2: User sent a text message
     else {
       const msg = message.text?.body?.toLowerCase();
       console.log("Incoming:", from, msg);
 
-      if (msg.includes("language")) {
-        await sendLanguageSelection(from); // send interactive buttons
-      } else if (msg.includes("hii") || msg.includes("hi")) {
-        await sendMessage(
-          from,
-          "Hello 👋, type 'language' to choose Hindi/English."
+      // Step 1: Say Hi → Show Language Buttons
+      if (msg.includes("hi") || msg.includes("hii")) {
+        await sendLanguageSelection(from); // interactive buttons
+      }
+
+      // Step 2: After selecting language → User types "choose"
+      else if (msg.includes("choose")) {
+        // ✅ Send list message
+        const payload = {
+          messaging_product: "whatsapp",
+          to: from,
+          type: "interactive",
+          interactive: {
+            type: "list",
+            header: { type: "text", text: "Welcome 👋" },
+            body: {
+              text: `Hello ${profileName}, please select from the options below 👇`,
+            },
+            footer: { text: "Powered by Demo Bot" },
+            action: {
+              button: "Please select",
+              sections: [
+                {
+                  title: "User Info",
+                  rows: [
+                    {
+                      id: "your_name",
+                      title: "👤 Your Name",
+                      description: profileName,
+                    },
+                  ],
+                },
+                {
+                  title: "Order List",
+                  rows: [
+                    {
+                      id: "order_1",
+                      title: "📦 Order #123",
+                      description: "Dummy order - Pending",
+                    },
+                    {
+                      id: "order_2",
+                      title: "📦 Order #124",
+                      description: "Dummy order - Delivered",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+
+        await axios.post(
+          `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+          payload,
+          { headers: { Authorization: `Bearer ${META_TOKEN}` } }
         );
-      } else if (msg.includes("order")) {
-        await sendMessage(
-          from,
-          "Sure ✅, please provide your order ID or details."
-        );
+
+        console.log("✅ List message sent to:", from);
       } else {
         await sendMessage(
           from,
-          "Sorry, I didn't understand. Type 'language', 'hii', or 'order' to start."
+          "Sorry, I didn't understand. Type 'hi' to start or 'choose' to see options."
         );
       }
     }
