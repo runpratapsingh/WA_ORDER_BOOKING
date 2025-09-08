@@ -195,15 +195,32 @@ app.post("/webhook", async (req, res) => {
 
     // Case 1: User clicked an interactive option
     if (message.type === "interactive") {
-      if (message.interactive.list_reply) {
-        const selection = message.interactive.list_reply;
-        console.log("📌 User selected:", selection);
+      // ✅ Language selection
+      const buttonReply = message.interactive?.button_reply;
+      if (buttonReply) {
+        if (buttonReply.id === "lang_english") {
+          await sendMessage(
+            from,
+            "✅ You selected English.\nType 'choose' to see options."
+          );
+        } else if (buttonReply.id === "lang_hindi") {
+          await sendMessage(
+            from,
+            "✅ आपने हिंदी चुना।\n'choose' लिखें विकल्प देखने के लिए।"
+          );
+        }
+      }
 
-        if (selection.id === "your_name") {
+      // ✅ List selection
+      const listReply = message.interactive?.list_reply;
+      if (listReply) {
+        console.log("📌 User selected:", listReply);
+
+        if (listReply.id === "your_name") {
           await sendMessage(from, `✅ Your name is ${profileName}`);
-        } else if (selection.id === "order_1") {
+        } else if (listReply.id === "order_1") {
           await sendMessage(from, "📦 Order #123 is still pending.");
-        } else if (selection.id === "order_2") {
+        } else if (listReply.id === "order_2") {
           await sendMessage(from, "✅ Order #124 was delivered successfully.");
         }
       }
@@ -214,7 +231,13 @@ app.post("/webhook", async (req, res) => {
       const msg = message.text?.body?.toLowerCase();
       console.log("Incoming:", from, msg);
 
-      if (msg.includes("choose")) {
+      // Step 1: Say Hi → Show Language Buttons
+      if (msg.includes("hi") || msg.includes("hii")) {
+        await sendLanguageSelection(from); // interactive buttons
+      }
+
+      // Step 2: After selecting language → User types "choose"
+      else if (msg.includes("choose")) {
         // ✅ Send list message
         const payload = {
           messaging_product: "whatsapp",
@@ -222,16 +245,11 @@ app.post("/webhook", async (req, res) => {
           type: "interactive",
           interactive: {
             type: "list",
-            header: {
-              type: "text",
-              text: "Welcome 👋",
-            },
+            header: { type: "text", text: "Welcome 👋" },
             body: {
               text: `Hello ${profileName}, please select from the options below 👇`,
             },
-            footer: {
-              text: "Powered by Demo Bot",
-            },
+            footer: { text: "Powered by Demo Bot" },
             action: {
               button: "Please select",
               sections: [
@@ -275,7 +293,7 @@ app.post("/webhook", async (req, res) => {
       } else {
         await sendMessage(
           from,
-          "Sorry, I didn't understand. Type 'choose' to see available options."
+          "Sorry, I didn't understand. Type 'hi' to start or 'choose' to see options."
         );
       }
     }
