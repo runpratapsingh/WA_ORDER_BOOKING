@@ -415,6 +415,6 @@ import { config } from './src/config/config.js'; // Adjust path if index.js is i
 const app = express();
 
 app.use(bodyParser.json());
-app.use('/api', webhookRoutes);
+app.use('/', webhookRoutes);
 
 app.listen(config.port, () => console.log(`🚀 Server running on port ${config.port}`));
