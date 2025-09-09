@@ -557,7 +557,7 @@ async function sendOrderFlow(to) {
     const payload = {
       recipient_type: "individual",
       messaging_product: "whatsapp",
-      to,
+      to: PHONE_NUMBER_ID,
       type: "interactive",
       interactive: {
         type: "flow",
