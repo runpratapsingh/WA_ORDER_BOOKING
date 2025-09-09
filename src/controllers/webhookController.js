@@ -591,7 +591,7 @@ async function sendOrderFlow(to) {
       },
     };
     const response = await axios.post(
-      `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
       payload,
       { headers: { Authorization: `Bearer ${META_TOKEN}` } }
     );
