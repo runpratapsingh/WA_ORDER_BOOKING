@@ -5,6 +5,122 @@ import {
 } from "../services/whatsappService.js";
 const userSessions = {};
 
+// New functions for interactive selections
+async function sendCustomerSelection(to) {
+  try {
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: { text: "Select a customer:" },
+        action: {
+          buttons: [
+            {
+              type: "reply",
+              reply: { id: "cust_c001", title: "C001 - Customer 1" },
+            },
+            {
+              type: "reply",
+              reply: { id: "cust_c002", title: "C002 - Customer 2" },
+            },
+          ],
+        },
+      },
+    };
+    await axios.post(
+      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      { headers: { Authorization: `Bearer ${META_TOKEN}` } }
+    );
+    console.log("✅ Customer selection sent to:", to);
+  } catch (err) {
+    console.error(
+      "❌ Error sending customer selection:",
+      err.response?.data || err.message
+    );
+  }
+}
+
+async function sendDateSelection(to) {
+  try {
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: { text: "Select a document date:" },
+        action: {
+          buttons: [
+            {
+              type: "reply",
+              reply: {
+                id: "date_today",
+                title: `Today (${new Date().toISOString().split("T")[0]})`,
+              },
+            },
+            {
+              type: "reply",
+              reply: { id: "date_custom", title: "Tomorrow (2025-09-10)" },
+            },
+          ],
+        },
+      },
+    };
+    await axios.post(
+      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      { headers: { Authorization: `Bearer ${META_TOKEN}` } }
+    );
+    console.log("✅ Date selection sent to:", to);
+  } catch (err) {
+    console.error(
+      "❌ Error sending date selection:",
+      err.response?.data || err.message
+    );
+  }
+}
+
+async function sendDocTypeSelection(to) {
+  try {
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "list",
+        body: { text: "Select a document type:" },
+        action: {
+          button: "Choose Type",
+          sections: [
+            {
+              title: "Options",
+              rows: [
+                { id: "type_blank", title: "Blank" },
+                { id: "type_invoice", title: "Invoice" },
+                { id: "type_payment", title: "Payment" },
+              ],
+            },
+          ],
+        },
+      },
+    };
+    await axios.post(
+      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      { headers: { Authorization: `Bearer ${META_TOKEN}` } }
+    );
+    console.log("✅ DocType selection sent to:", to);
+  } catch (err) {
+    console.error(
+      "❌ Error sending docType selection:",
+      err.response?.data || err.message
+    );
+  }
+}
+
 export async function handleWebhook(req, res) {
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
@@ -62,47 +178,46 @@ export async function handleWebhook(req, res) {
 
       // Existing logic for hi/choose...
 
-      // New: Handle order creation flow with detailed data collection
+      // New: Handle order creation flow with interactive selections
       if (msg.includes("create order")) {
-        userSessions[from] = {
-          step: "customer",
-          orderData: { lines: [] },
-        };
-        await sendMessage(
-          from,
-          "Great! Let's create a sales order (demo). What's the customer number (e.g., C001)?"
-        );
+        userSessions[from] = { step: "customer", orderData: { lines: [] } };
+        // Send interactive buttons for customer selection
+        await sendCustomerSelection(from);
       } else if (userSessions[from]) {
         const session = userSessions[from];
 
         if (session.step === "customer") {
-          session.orderData.sellToCustomerNo = msg;
-          session.step = "documentDate";
-          await sendMessage(
-            from,
-            `Got customer: ${msg}. What's the document date (e.g., 2025-09-09) or press 'enter' for today (${
-              new Date().toISOString().split("T")[0]
-            })?`
-          );
+          if (msg === "cust_c001" || msg === "cust_c002") {
+            session.orderData.sellToCustomerNo =
+              msg === "cust_c001" ? "C001" : "C002";
+            session.step = "documentDate";
+            await sendDateSelection(from);
+          }
         } else if (session.step === "documentDate") {
-          session.orderData.documentDate =
-            msg || new Date().toISOString().split("T")[0]; // Default to today if empty
-          session.step = "docType";
-          await sendMessage(
-            from,
-            `Got date: ${session.orderData.documentDate}. What's the document type? (e.g., invoice, payment, blank - default is blank)`
-          );
+          if (msg === "date_today" || msg === "date_custom") {
+            session.orderData.documentDate =
+              msg === "date_today"
+                ? new Date().toISOString().split("T")[0]
+                : "2025-09-10"; // Default custom date
+            session.step = "docType";
+            await sendDocTypeSelection(from);
+          }
         } else if (session.step === "docType") {
-          session.orderData.appliesToDocType = msg || "blank"; // Default to 'blank' if empty
-          session.step = "item";
-          await sendMessage(
-            from,
-            `Got type: ${session.orderData.appliesToDocType}. Now add items. Send item number, quantity (e.g., 'ITEM001 5'). Send 'done' when finished.`
-          );
+          if (
+            msg === "type_blank" ||
+            msg === "type_invoice" ||
+            msg === "type_payment"
+          ) {
+            session.orderData.appliesToDocType = msg.replace("type_", "");
+            session.step = "item";
+            await sendMessage(
+              from,
+              `Got type: ${session.orderData.appliesToDocType}. Now add items. Send item number, quantity (e.g., 'ITEM001 5'). Send 'done' when finished.`
+            );
+          }
         } else if (session.step === "item") {
           if (msg === "done") {
-            // Simulate order creation and store in object
-            const orderId = `SO${Date.now()}`; // Dummy order ID
+            const orderId = `SO${Date.now()}`;
             const demoOrder = {
               orderId,
               sellToCustomerNo: session.orderData.sellToCustomerNo,
@@ -114,7 +229,6 @@ export async function handleWebhook(req, res) {
             };
             console.log("Demo Sales Order Created:", demoOrder);
 
-            // Store in a demo "database" (in-memory object)
             if (!userSessions.demoOrders) userSessions.demoOrders = {};
             userSessions.demoOrders[orderId] = demoOrder;
 
@@ -144,7 +258,6 @@ export async function handleWebhook(req, res) {
           }
         }
       } else {
-        // Existing fallback...
         await sendMessage(
           from,
           "Sorry, I didn't understand. Type 'hi' to start, 'choose' to see options, or 'create order' to make a demo order."
