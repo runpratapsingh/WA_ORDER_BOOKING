@@ -625,10 +625,12 @@ export async function handleWebhook(req, res) {
     } else if (msg.includes("create order")) {
       console.log("Creating order for:", from); // Confirm entry
       try {
-        userSessions[from] = { step: "customer", orderData: { lines: [] } };
-        console.log("Session initialized:", userSessions[from]);
-        await sendCustomerSelection(from);
-        console.log("Customer selection sent");
+        // userSessions[from] = { step: "customer", orderData: { lines: [] } };
+        // console.log("Session initialized:", userSessions[from]);
+        // await sendCustomerSelection(from);
+        // console.log("Customer selection sent");
+                await sendMessage(from, "Start creating your order...");
+
       } catch (error) {
         console.error("Error in create order flow:", error); // Catch errors
         await sendMessage(from, "❌ An error occurred while starting your order. Please try again.", error);
