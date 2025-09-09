@@ -552,6 +552,55 @@ async function sendDocTypeSelection(to) {
 //   res.sendStatus(200);
 // }
 
+async function sendOrderFlow(to) {
+  try {
+    const payload = {
+      recipient_type: "individual",
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "flow",
+        header: {
+          type: "text",
+          text: "Create Sales Order",
+        },
+        body: {
+          text: "Please fill out the order details below.",
+        },
+        footer: {
+          text: "Powered by Your Business",
+        },
+        action: {
+          name: "flow",
+          parameters: {
+            flow_message_version: "3",
+            flow_id: "1", // Replace with your actual Flow ID from WhatsApp Manager
+            flow_cta: "Book!",
+            flow_action: "navigate",
+            flow_action_payload: {
+              screen: "FIRST_ENTRY_SCREEN",
+              data: {
+                product_name: "Sample Product",
+                product_description: "A demo sales order item",
+                product_price: 100,
+              },
+            },
+          },
+        },
+      },
+    };
+    const response = await axios.post(
+      `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      { headers: { Authorization: `Bearer ${META_TOKEN}` } }
+    );
+    console.log("✅ Order flow sent, Response:", response.data);
+  } catch (err) {
+    console.error("❌ Error sending order flow:", err.response?.data || err.message);
+  }
+}
+
 export async function handleWebhook(req, res) {
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
   console.log("Received webhook payload:", req.body); // Log full payload
@@ -628,6 +677,7 @@ export async function handleWebhook(req, res) {
         // userSessions[from] = { step: "customer", orderData: { lines: [] } };
         // console.log("Session initialized:", userSessions[from]);
         // await sendCustomerSelection(from);
+        await sendOrderFlow(from);
         // console.log("Customer selection sent");
                 await sendMessage(from, "Start creating your order...");
 
