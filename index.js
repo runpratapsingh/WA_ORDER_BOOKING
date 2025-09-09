@@ -6,7 +6,7 @@ const app = express();
 app.use(bodyParser.json());
 
 const META_TOKEN =
-  "EAAJkBk85o2gBPcrf7ZCSRnzm23voUybWgSZCvthXZCyJsnhi6yBAmICTAZAVWNyMgVH8aL4PqlYf3f48N8zJRrPdKEZAMEWYeZCyikDA23OG9ptFocmQR49yKlCWJBNnHiaShpJyZATc2U4TZCmqBzZCoSrVp9W3vDWyRVPZCG1UT7feSFmOnapFm3SHA4NVI5rW0u96ieKMQK6ZBiTqTR9YkbwfZCqG21ZBKZBNFy6EmQlPM6cTEZD"; // your token
+  "EAAJkBk85o2gBPYRN0ZCy9IkWersnTgslTtopajt60HotZC7SD9cp0a4bkOBWZBNTRpuywZCrxzWN4VgZAuPGFjnbrCwZCK8g0xBCXvjCXTCCvqM6TSf3SBu5y7jZC0xyfL4ECWVmbVo0tfckD7k8SCByXBFL1GqvCNQZAU0ncFQfrDUrUnWBo8CpNh44mwENCfxD7OhDu8d2vVWNeXwf4vX33kbTJzQPfy2riF2vFn7kN7cZD"; // your token
 const PHONE_NUMBER_ID = "754571211077181"; // from your Meta dashboard
 
 // ✅ Send normal text message
