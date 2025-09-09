@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-  metaToken: "EAAJkBk85o2gBPfMVrauH5ZCOxhztLZAha7ZBNOSdkAT0iGlLURlIMUxyJ5ACIKvgGst6QQmrAqbX78ufVNZCuGC9cr9bj83HXkqw38IBspecZCsUUovb3xQTRPIHnnr9yYzZAsFSDJL1NG3FHjFsM09NrUmULFNUNTNhgyCfCgeIiYIWVDoey5yrjrZBvQgtMNPnMcTHaQTwiPdSsH62nGuNs3taxGqgFIQi8NdXZBqc7AZDZD",
+  metaToken: "EAAJkBk85o2gBPZAeeEmr2RQZBxVT4ZAH9EDRMVZBGjHSxps0WwMkRqp27igL3QNZCYnhyuwzwJoUEspkMllW1ZCQ6wrw6MXM5KHykBJ7Euma1BrgjEJ3nW0tkSPkyzfqJve9zZAQNNZCCmtfSo6HNBTXXNnXbLg254oPokQE7gJo2zBWuoc0gBEqmbXWOlRm7LmysXhns6jZC6kwf0rUzvfvURcfgWLkZB1HgjeD7MuUrPLQZDZD",
   phoneNumberId: "754571211077181",
   webhookVerifyToken: "myVerify123",
   port: 3000,
