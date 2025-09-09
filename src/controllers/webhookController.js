@@ -631,6 +631,7 @@ export async function handleWebhook(req, res) {
         console.log("Customer selection sent");
       } catch (error) {
         console.error("Error in create order flow:", error); // Catch errors
+        await sendMessage(from, "❌ An error occurred while starting your order. Please try again.", error);
       }
     } else if (userSessions[from]) {
       const session = userSessions[from];
