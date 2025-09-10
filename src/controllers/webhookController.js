@@ -90,59 +90,150 @@ import {
 
 const userSessions = {}; // Store state per user
 
+// export async function handleWebhook(req, res) {
+//   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+//   const from = message?.from;
+//   const profileName =
+//     req.body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name ||
+//     "User";
+
+//   console.log("📩 Incoming message:", JSON.stringify(message, null, 2));
+
+//   if (!message) return res.sendStatus(200);
+
+//   // ensure session
+//   if (!userSessions[from]) {
+//     userSessions[from] = { step: "start", orderData: {} };
+//   }
+
+//   // 🔹 Case 1: Interactive replies
+//   if (message.type === "interactive") {
+//     const interactiveType = message.interactive?.type;
+
+//     if (interactiveType === "button_reply") {
+//       const buttonReply = message.interactive.button_reply;
+//       console.log("👉 Button reply:", buttonReply);
+
+//       if (buttonReply.id === "approve_yes") {
+//         await sendMessage(from, "✅ Order confirmed successfully!");
+//         userSessions[from] = { step: "start", orderData: {} }; // reset
+//       } else if (buttonReply.id === "approve_no") {
+//         await sendMessage(from, "❌ Order was cancelled.");
+//         userSessions[from] = { step: "start", orderData: {} }; // reset
+//       }
+//     }
+
+//     if (interactiveType === "list_reply") {
+//       const listReply = message.interactive.list_reply;
+//       console.log("👉 List reply:", listReply);
+
+//       if (listReply.id === "sales_order") {
+//         userSessions[from].step = "customer";
+//         await sendCustomerList(from);
+//       } else if (listReply.id === "customer_statement") {
+//         await sendMessage(
+//           from,
+//           "📊 Customer Statement feature is under development."
+//         );
+//       } else if (listReply.id.startsWith("customer_")) {
+//         userSessions[from].orderData.customer = listReply.title;
+//         userSessions[from].step = "item";
+//         await sendMessage(
+//           from,
+//           `✅ Customer updated. Sales Order ID: SO/${new Date().getFullYear()}/${
+//             Math.floor(Math.random() * 1000) + 1
+//           }`
+//         );
+//         await sendItemList(from);
+//       } else if (listReply.id.startsWith("item_")) {
+//         userSessions[from].orderData.item = listReply.title;
+//         userSessions[from].step = "quantity";
+//         await sendMessage(
+//           from,
+//           `You selected ${listReply.title}. Please enter quantity (e.g., '5').`
+//         );
+//       }
+//     }
+//   }
+
+//   // 🔹 Case 2: Text messages
+//   else if (message.type === "text") {
+//     const msg = message.text?.body?.toLowerCase().trim();
+//     console.log("👉 Text message:", msg);
+
+//     if (msg === "hi") {
+//       await sendMainMenu(from);
+//     } else if (userSessions[from].step === "quantity") {
+//       const qty = parseInt(msg, 10);
+//       if (!isNaN(qty) && qty > 0) {
+//         userSessions[from].orderData.quantity = qty;
+//         userSessions[from].step = "approval";
+//         await sendMessage(
+//           from,
+//           `📦 Order Summary:\nCustomer: ${userSessions[from].orderData.customer}\nItem: ${userSessions[from].orderData.item}\nQuantity: ${qty}`
+//         );
+//         await sendApproval(from);
+//       } else {
+//         await sendMessage(from, "❌ Invalid quantity. Please enter a number.");
+//       }
+//     } else {
+//       await sendMessage(from, "Type 'hi' to start the menu.");
+//     }
+//   }
+
+//   res.sendStatus(200);
+// }
+
+
 export async function handleWebhook(req, res) {
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
   const from = message?.from;
-  const profileName =
-    req.body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name ||
-    "User";
 
   console.log("📩 Incoming message:", JSON.stringify(message, null, 2));
 
   if (!message) return res.sendStatus(200);
 
-  // ensure session
+  // Create new session if not exists
   if (!userSessions[from]) {
     userSessions[from] = { step: "start", orderData: {} };
   }
 
-  // 🔹 Case 1: Interactive replies
+  // 🔹 Case 1: Interactive reply
   if (message.type === "interactive") {
     const interactiveType = message.interactive?.type;
 
+    // ✅ BUTTON reply
     if (interactiveType === "button_reply") {
       const buttonReply = message.interactive.button_reply;
       console.log("👉 Button reply:", buttonReply);
 
       if (buttonReply.id === "approve_yes") {
         await sendMessage(from, "✅ Order confirmed successfully!");
-        userSessions[from] = { step: "start", orderData: {} }; // reset
+        userSessions[from] = { step: "start", orderData: {} };
       } else if (buttonReply.id === "approve_no") {
         await sendMessage(from, "❌ Order was cancelled.");
-        userSessions[from] = { step: "start", orderData: {} }; // reset
+        userSessions[from] = { step: "start", orderData: {} };
       }
     }
 
-    if (interactiveType === "list_reply") {
+    // ✅ LIST reply
+    else if (interactiveType === "list_reply") {
       const listReply = message.interactive.list_reply;
       console.log("👉 List reply:", listReply);
 
       if (listReply.id === "sales_order") {
         userSessions[from].step = "customer";
-        await sendCustomerList(from);
+        await sendCustomerList(from);  // <--- SHOULD TRIGGER CUSTOMER LIST
       } else if (listReply.id === "customer_statement") {
-        await sendMessage(
-          from,
-          "📊 Customer Statement feature is under development."
-        );
+        await sendMessage(from, "📊 Customer Statement feature coming soon.");
       } else if (listReply.id.startsWith("customer_")) {
         userSessions[from].orderData.customer = listReply.title;
         userSessions[from].step = "item";
         await sendMessage(
           from,
-          `✅ Customer updated. Sales Order ID: SO/${new Date().getFullYear()}/${
-            Math.floor(Math.random() * 1000) + 1
-          }`
+          `✅ Customer updated. Sales Order ID: SO/${new Date().getFullYear()}/${Math.floor(
+            Math.random() * 1000
+          )}`
         );
         await sendItemList(from);
       } else if (listReply.id.startsWith("item_")) {
@@ -156,7 +247,7 @@ export async function handleWebhook(req, res) {
     }
   }
 
-  // 🔹 Case 2: Text messages
+  // 🔹 Case 2: Text message
   else if (message.type === "text") {
     const msg = message.text?.body?.toLowerCase().trim();
     console.log("👉 Text message:", msg);
@@ -183,6 +274,7 @@ export async function handleWebhook(req, res) {
 
   res.sendStatus(200);
 }
+
 
 
 
