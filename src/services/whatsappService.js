@@ -251,11 +251,11 @@ export async function sendCustomerList(to) {
     };
 
     const response = await axios.post(
-      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
       payload,
       {
         headers: {
-          Authorization: `Bearer ${META_TOKEN}`,
+          Authorization: `Bearer ${metaToken}`,
           "Content-Type": "application/json",
         },
       }
