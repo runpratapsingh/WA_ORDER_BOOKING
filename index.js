@@ -407,14 +407,131 @@
 // app.listen(3000, () => console.log("🚀 Server running on port 3000"));
 
 
-import express from 'express';
-import bodyParser from 'body-parser';
-import webhookRoutes from './src/routes/webhookRoutes.js'; // Adjust path if index.js is in root
-import { config } from './src/config/config.js'; // Adjust path if index.js is in root
+// import express from 'express';
+// import bodyParser from 'body-parser';
+// import webhookRoutes from './src/routes/webhookRoutes.js'; // Adjust path if index.js is in root
+// import { config } from './src/config/config.js'; // Adjust path if index.js is in root
+
+// const app = express();
+
+// app.use(bodyParser.json());
+// app.use('/', webhookRoutes);
+
+// app.listen(config.port, () => console.log(`🚀 Server running on port ${config.port}`));
+
+
+
+import express from "express";
+import bodyParser from "body-parser";
+import axios from "axios";
 
 const app = express();
-
 app.use(bodyParser.json());
-app.use('/', webhookRoutes);
 
-app.listen(config.port, () => console.log(`🚀 Server running on port ${config.port}`));
+const META_TOKEN = "EAAJkBk85o2gBPbRdYAbureWabRLr3VCkr98fjvcK05GSiXpFIh8isOo6Ib0xIS0aURkTANKOkKvDTkRtYqigUZAR1FtG054YeuDT1KtvfrOT4e9E0HjSuPn4Ka9AJS7um5ER2nbpyZA5keZBXZAo3zmHfUpWZA7J51xZABxfUvFlRsuN6q77JoDvGWlrsWN6WlADleWrhCB5zZCkwERRoFA2Io5NImOJt3LtXc5ibLs24EZD"; // Put your WhatsApp access token here
+const PHONE_NUMBER_ID = "754571211077181"; // Replace with your WhatsApp phone number ID
+
+// ✅ Webhook verification (for initial setup in Meta Dashboard)
+app.get("/webhook", (req, res) => {
+  const verify_token = "myVerify123"; // Set this same in Meta dashboard
+
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (mode && token) {
+    if (mode === "subscribe" && token === verify_token) {
+      console.log("WEBHOOK_VERIFIED");
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  }
+});
+
+// ✅ Webhook for receiving messages
+app.post("/webhook", async (req, res) => {
+  try {
+    const entry = req.body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const messages = changes?.value?.messages;
+
+    if (messages && messages[0]) {
+      const from = messages[0].from; // User's WhatsApp ID
+      const msgBody = messages[0].text?.body?.toLowerCase();
+
+      if (msgBody === "hii") {
+        await sendFlowMessage(from);
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook error:", err);
+    res.sendStatus(500);
+  }
+});
+
+// ✅ Function to send flow message
+async function sendFlowMessage(to) {
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        recipient_type: "individual",
+        messaging_product: "whatsapp",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "flow",
+          header: {
+            type: "text",
+            text: "Flow message header",
+          },
+          body: {
+            text: "Flow message body",
+          },
+          footer: {
+            text: "Flow message footer",
+          },
+          action: {
+            name: "flow",
+            parameters: {
+              flow_message_version: "3",
+              flow_token: "AQAAAAACS5FpgQ_cAAAAAD0QI3s.", // Example, replace with your token
+              flow_id: "1", // Replace with your actual Flow ID
+              flow_cta: "Book!",
+              flow_action: "navigate",
+              flow_action_payload: {
+                screen: "FIRST_ENTRY_SCREEN", // Replace with your screen name
+                data: {
+                  product_name: "name",
+                  product_description: "description",
+                  product_price: 100,
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${META_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Flow Message Sent:", response.data);
+  } catch (error) {
+    console.error(
+      "Error sending flow message:",
+      error.response?.data || error.message
+    );
+  }
+}
+
+// Start server
+app.listen(3000, () => {
+  console.log("Webhook is running on port 3000");
+});
