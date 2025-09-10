@@ -79,7 +79,6 @@
 //   res.sendStatus(200);
 // }
 
-
 import {
   sendMessage,
   sendLanguageSelection,
@@ -98,6 +97,8 @@ export async function handleWebhook(req, res) {
     req.body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name ||
     "User";
 
+  console.log("📩 Incoming message:", JSON.stringify(message, null, 2));
+
   if (!message) return res.sendStatus(200);
 
   // ensure session
@@ -105,12 +106,14 @@ export async function handleWebhook(req, res) {
     userSessions[from] = { step: "start", orderData: {} };
   }
 
-  // 🔹 Interactive replies
+  // 🔹 Case 1: Interactive replies
   if (message.type === "interactive") {
-    const buttonReply = message.interactive?.button_reply;
-    const listReply = message.interactive?.list_reply;
+    const interactiveType = message.interactive?.type;
 
-    if (buttonReply) {
+    if (interactiveType === "button_reply") {
+      const buttonReply = message.interactive.button_reply;
+      console.log("👉 Button reply:", buttonReply);
+
       if (buttonReply.id === "approve_yes") {
         await sendMessage(from, "✅ Order confirmed successfully!");
         userSessions[from] = { step: "start", orderData: {} }; // reset
@@ -120,7 +123,10 @@ export async function handleWebhook(req, res) {
       }
     }
 
-    if (listReply) {
+    if (interactiveType === "list_reply") {
+      const listReply = message.interactive.list_reply;
+      console.log("👉 List reply:", listReply);
+
       if (listReply.id === "sales_order") {
         userSessions[from].step = "customer";
         await sendCustomerList(from);
@@ -150,9 +156,10 @@ export async function handleWebhook(req, res) {
     }
   }
 
-  // 🔹 Text messages
+  // 🔹 Case 2: Text messages
   else if (message.type === "text") {
     const msg = message.text?.body?.toLowerCase().trim();
+    console.log("👉 Text message:", msg);
 
     if (msg === "hi") {
       await sendMainMenu(from);
@@ -176,6 +183,7 @@ export async function handleWebhook(req, res) {
 
   res.sendStatus(200);
 }
+
 
 
 export async function handleSendMessage(req, res) {
