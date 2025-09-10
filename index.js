@@ -476,7 +476,7 @@ app.post("/webhook", async (req, res) => {
 async function sendFlowMessage(to) {
   try {
     const response = await axios.post(
-      `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
       {
         recipient_type: "individual",
         messaging_product: "whatsapp",
