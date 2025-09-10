@@ -78,7 +78,6 @@
 
 //   res.sendStatus(200);
 // }
-
 import {
   sendMessage,
   sendLanguageSelection,
@@ -88,187 +87,93 @@ import {
   sendApproval,
 } from "../services/whatsappService.js";
 
-const userSessions = {}; // Store state per user
-
-// export async function handleWebhook(req, res) {
-//   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-//   const from = message?.from;
-//   const profileName =
-//     req.body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name ||
-//     "User";
-
-//   console.log("📩 Incoming message:", JSON.stringify(message, null, 2));
-
-//   if (!message) return res.sendStatus(200);
-
-//   // ensure session
-//   if (!userSessions[from]) {
-//     userSessions[from] = { step: "start", orderData: {} };
-//   }
-
-//   // 🔹 Case 1: Interactive replies
-//   if (message.type === "interactive") {
-//     const interactiveType = message.interactive?.type;
-
-//     if (interactiveType === "button_reply") {
-//       const buttonReply = message.interactive.button_reply;
-//       console.log("👉 Button reply:", buttonReply);
-
-//       if (buttonReply.id === "approve_yes") {
-//         await sendMessage(from, "✅ Order confirmed successfully!");
-//         userSessions[from] = { step: "start", orderData: {} }; // reset
-//       } else if (buttonReply.id === "approve_no") {
-//         await sendMessage(from, "❌ Order was cancelled.");
-//         userSessions[from] = { step: "start", orderData: {} }; // reset
-//       }
-//     }
-
-//     if (interactiveType === "list_reply") {
-//       const listReply = message.interactive.list_reply;
-//       console.log("👉 List reply:", listReply);
-
-//       if (listReply.id === "sales_order") {
-//         userSessions[from].step = "customer";
-//         await sendCustomerList(from);
-//       } else if (listReply.id === "customer_statement") {
-//         await sendMessage(
-//           from,
-//           "📊 Customer Statement feature is under development."
-//         );
-//       } else if (listReply.id.startsWith("customer_")) {
-//         userSessions[from].orderData.customer = listReply.title;
-//         userSessions[from].step = "item";
-//         await sendMessage(
-//           from,
-//           `✅ Customer updated. Sales Order ID: SO/${new Date().getFullYear()}/${
-//             Math.floor(Math.random() * 1000) + 1
-//           }`
-//         );
-//         await sendItemList(from);
-//       } else if (listReply.id.startsWith("item_")) {
-//         userSessions[from].orderData.item = listReply.title;
-//         userSessions[from].step = "quantity";
-//         await sendMessage(
-//           from,
-//           `You selected ${listReply.title}. Please enter quantity (e.g., '5').`
-//         );
-//       }
-//     }
-//   }
-
-//   // 🔹 Case 2: Text messages
-//   else if (message.type === "text") {
-//     const msg = message.text?.body?.toLowerCase().trim();
-//     console.log("👉 Text message:", msg);
-
-//     if (msg === "hi") {
-//       await sendMainMenu(from);
-//     } else if (userSessions[from].step === "quantity") {
-//       const qty = parseInt(msg, 10);
-//       if (!isNaN(qty) && qty > 0) {
-//         userSessions[from].orderData.quantity = qty;
-//         userSessions[from].step = "approval";
-//         await sendMessage(
-//           from,
-//           `📦 Order Summary:\nCustomer: ${userSessions[from].orderData.customer}\nItem: ${userSessions[from].orderData.item}\nQuantity: ${qty}`
-//         );
-//         await sendApproval(from);
-//       } else {
-//         await sendMessage(from, "❌ Invalid quantity. Please enter a number.");
-//       }
-//     } else {
-//       await sendMessage(from, "Type 'hi' to start the menu.");
-//     }
-//   }
-
-//   res.sendStatus(200);
-// }
-
+const userSessions = {};
+const processedMessages = new Set();
 
 export async function handleWebhook(req, res) {
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
   const from = message?.from;
 
-  console.log("📩 Incoming message:", JSON.stringify(message, null, 2));
-
   if (!message) return res.sendStatus(200);
 
-  // Create new session if not exists
+  // ✅ Deduplication
+  if (processedMessages.has(message.id)) {
+    return res.sendStatus(200);
+  }
+  processedMessages.add(message.id);
+
+  const profileName =
+    req.body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name || "User";
+
+  // Ensure session
   if (!userSessions[from]) {
     userSessions[from] = { step: "start", orderData: {} };
   }
 
-  // 🔹 Case 1: Interactive reply
+  if (message.type === "text") {
+    const msg = message.text.body.toLowerCase();
+
+    if (msg.includes("hi")) {
+      await sendMainMenu(from);
+    } else {
+      await sendMessage(from, "Type 'hi' to start again.");
+    }
+  }
+
   if (message.type === "interactive") {
-    const interactiveType = message.interactive?.type;
+    const buttonReply = message.interactive?.button_reply;
+    const listReply = message.interactive?.list_reply;
 
-    // ✅ BUTTON reply
-    if (interactiveType === "button_reply") {
-      const buttonReply = message.interactive.button_reply;
-      console.log("👉 Button reply:", buttonReply);
-
+    // ✅ Button replies (approval)
+    if (buttonReply) {
       if (buttonReply.id === "approve_yes") {
-        await sendMessage(from, "✅ Order confirmed successfully!");
-        userSessions[from] = { step: "start", orderData: {} };
+        await sendMessage(from, "✅ Order approved and saved.");
       } else if (buttonReply.id === "approve_no") {
-        await sendMessage(from, "❌ Order was cancelled.");
-        userSessions[from] = { step: "start", orderData: {} };
+        await sendMessage(from, "❌ Order cancelled.");
       }
     }
 
-    // ✅ LIST reply
-    else if (interactiveType === "list_reply") {
-      const listReply = message.interactive.list_reply;
-      console.log("👉 List reply:", listReply);
-
+    // ✅ List replies
+    if (listReply) {
+      // Main menu choice
       if (listReply.id === "sales_order") {
         userSessions[from].step = "customer";
-        await sendCustomerList(from);  // <--- SHOULD TRIGGER CUSTOMER LIST
+        await sendCustomerList(from);
       } else if (listReply.id === "customer_statement") {
-        await sendMessage(from, "📊 Customer Statement feature coming soon.");
-      } else if (listReply.id.startsWith("customer_")) {
-        userSessions[from].orderData.customer = listReply.title;
+        await sendMessage(from, "📑 Customer Statement feature coming soon.");
+      }
+
+      // Customer selection
+      else if (listReply.id.startsWith("customer_")) {
+        const orderId = `SO/${new Date().getFullYear()}/${Math.floor(Math.random() * 1000)}`;
+        userSessions[from].orderData.orderId = orderId;
         userSessions[from].step = "item";
-        await sendMessage(
-          from,
-          `✅ Customer updated. Sales Order ID: SO/${new Date().getFullYear()}/${Math.floor(
-            Math.random() * 1000
-          )}`
-        );
+        await sendMessage(from, `✅ Customer updated. Sales Order ID: ${orderId}`);
         await sendItemList(from);
-      } else if (listReply.id.startsWith("item_")) {
+      }
+
+      // Item selection
+      else if (listReply.id.startsWith("item_")) {
         userSessions[from].orderData.item = listReply.title;
         userSessions[from].step = "quantity";
-        await sendMessage(
-          from,
-          `You selected ${listReply.title}. Please enter quantity (e.g., '5').`
-        );
+        await sendMessage(from, `🛒 You selected ${listReply.title}. Please enter quantity (e.g., 5).`);
       }
     }
   }
 
-  // 🔹 Case 2: Text message
-  else if (message.type === "text") {
-    const msg = message.text?.body?.toLowerCase().trim();
-    console.log("👉 Text message:", msg);
-
-    if (msg === "hi") {
-      await sendMainMenu(from);
-    } else if (userSessions[from].step === "quantity") {
-      const qty = parseInt(msg, 10);
-      if (!isNaN(qty) && qty > 0) {
-        userSessions[from].orderData.quantity = qty;
-        userSessions[from].step = "approval";
-        await sendMessage(
-          from,
-          `📦 Order Summary:\nCustomer: ${userSessions[from].orderData.customer}\nItem: ${userSessions[from].orderData.item}\nQuantity: ${qty}`
-        );
-        await sendApproval(from);
-      } else {
-        await sendMessage(from, "❌ Invalid quantity. Please enter a number.");
-      }
+  // ✅ Handle quantity input
+  if (message.type === "text" && userSessions[from].step === "quantity") {
+    const qty = parseInt(message.text.body, 10);
+    if (!isNaN(qty)) {
+      userSessions[from].orderData.quantity = qty;
+      userSessions[from].step = "approval";
+      await sendMessage(
+        from,
+        `📦 Order: ${userSessions[from].orderData.item}, Qty: ${qty}, ID: ${userSessions[from].orderData.orderId}`
+      );
+      await sendApproval(from);
     } else {
-      await sendMessage(from, "Type 'hi' to start the menu.");
+      await sendMessage(from, "❌ Please enter a valid number for quantity.");
     }
   }
 
