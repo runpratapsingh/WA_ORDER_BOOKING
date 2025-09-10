@@ -181,35 +181,92 @@ export async function sendMainMenu(to) {
   );
 }
 
-// 🔹 Send customer selection list (30 dummy customers)
+// // 🔹 Send customer selection list (30 dummy customers)
+// export async function sendCustomerList(to) {
+//   const customers = Array.from({ length: 30 }, (_, i) => ({
+//     id: `customer_${i + 1}`,
+//     title: `Customer ${i + 1}`,
+//     description: `Address ${i + 1}`,
+//   }));
+
+//   const payload = {
+//     messaging_product: "whatsapp",
+//     to,
+//     type: "interactive",
+//     interactive: {
+//       type: "list",
+//       header: { type: "text", text: "Select Customer" },
+//       body: { text: "Please choose a customer with address:" },
+//       action: {
+//         button: "Select Customer",
+//         sections: [{ title: "Customers", rows: customers }],
+//       },
+//     },
+//   };
+
+//   await axios.post(
+//     `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
+//     payload,
+//     { headers: { Authorization: `Bearer ${metaToken}` } }
+//   );
+// }
+
 export async function sendCustomerList(to) {
-  const customers = Array.from({ length: 30 }, (_, i) => ({
-    id: `customer_${i + 1}`,
-    title: `Customer ${i + 1}`,
-    description: `Address ${i + 1}`,
-  }));
-
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "interactive",
-    interactive: {
-      type: "list",
-      header: { type: "text", text: "Select Customer" },
-      body: { text: "Please choose a customer with address:" },
-      action: {
-        button: "Select Customer",
-        sections: [{ title: "Customers", rows: customers }],
+  try {
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      type: "interactive",
+      interactive: {
+        type: "list",
+        body: {
+          text: "📋 Please select a customer from the list below:",
+        },
+        action: {
+          button: "Select Customer",
+          sections: [
+            {
+              title: "Customers",
+              rows: [
+                {
+                  id: "customer_1",
+                  title: "Customer A",
+                  description: "Preferred customer",
+                },
+                {
+                  id: "customer_2",
+                  title: "Customer B",
+                  description: "Regular customer",
+                },
+                {
+                  id: "customer_3",
+                  title: "Customer C",
+                  description: "New customer",
+                },
+              ],
+            },
+          ],
+        },
       },
-    },
-  };
+    };
 
-  await axios.post(
-    `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
-    payload,
-    { headers: { Authorization: `Bearer ${metaToken}` } }
-  );
+    const response = await axios.post(
+      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${META_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Customer list sent:", response.data);
+  } catch (error) {
+    console.error("❌ Error in sendCustomerList:", error.response?.data || error.message);
+  }
 }
+
 
 // 🔹 Send item selection list (20 dummy items)
 export async function sendItemList(to) {
