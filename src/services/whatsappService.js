@@ -2,8 +2,41 @@
 
 import axios from "axios";
 import { config } from "../config/config.js";
-
+import { fetchCustomers } from "../api/apiconfig.js";
 const { metaToken, phoneNumberId } = config;
+
+
+// // 🔹 OData API credentials
+// const CUSTOMERLIST_ODATA_URL =
+//   "http://20.198.227.247:7048/BC240/ODataV4/Company('CRONUS%20India%20Ltd.')/CustomerList";
+
+// const NTLM_CONFIG = {
+//   username: "arun.singh",
+//   password: "DAxC87$'bK0v",
+// };
+
+// // ✅ Fetch Customer List from OData
+// export async function fetchCustomers() {
+//   try {
+//     const response = await axiosNTLM.get(CUSTOMERLIST_ODATA_URL, {
+//       auth: NTLM_CONFIG,
+//     });
+
+//     // OData usually wraps data in `value`
+//     const customerData = response.data.value || [];
+
+//     // Map response to WhatsApp interactive list format
+//     return customerData.slice(0, 10).map((c, index) => ({
+//       id: `customer_${index + 1}`,
+//       title: c.Name || "Unknown Customer",
+//       description: c.Contact || c.Location_Code || "No details",
+//     }));
+//   } catch (error) {
+//     console.error("❌ Error fetching customers:", error.message);
+//     return [];
+//   }
+// }
+
 
 async function sendRequest(payload) {
   return axios.post(
@@ -72,13 +105,14 @@ export async function sendMainMenu(to) {
 
 // ✅ Send customer list (manual data instead of loop)
 export async function sendCustomerList(to) {
-  const customers = [
-    { id: "customer_1", title: "Reliance Retail", description: "Mumbai, India" },
-    { id: "customer_2", title: "Tata Motors", description: "Pune, India" },
-    { id: "customer_3", title: "Aditya Birla Group", description: "Delhi, India" },
-    { id: "customer_4", title: "Infosys Ltd", description: "Bangalore, India" },
-    { id: "customer_5", title: "Wipro Ltd", description: "Hyderabad, India" },
-  ];
+  // const customers = [
+  //   { id: "customer_1", title: "Reliance Retail", description: "Mumbai, India" },
+  //   { id: "customer_2", title: "Tata Motors", description: "Pune, India" },
+  //   { id: "customer_3", title: "Aditya Birla Group", description: "Delhi, India" },
+  //   { id: "customer_4", title: "Infosys Ltd", description: "Bangalore, India" },
+  //   { id: "customer_5", title: "Wipro Ltd", description: "Hyderabad, India" },
+  // ];
+    const customers = await fetchCustomers();
 
   const payload = {
     messaging_product: "whatsapp",

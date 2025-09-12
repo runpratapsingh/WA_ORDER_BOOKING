@@ -78,6 +78,7 @@
 
 //   res.sendStatus(200);
 // }
+import { fetchCustomers } from "../api/apiconfig.js";
 import {
   sendMessage,
   sendLanguageSelection,
@@ -86,6 +87,7 @@ import {
   sendItemList,
   sendApproval,
 } from "../services/whatsappService.js";
+
 
 const userSessions = {};
 const processedMessages = new Set();
@@ -180,9 +182,6 @@ export async function handleWebhook(req, res) {
   res.sendStatus(200);
 }
 
-
-
-
 export async function handleSendMessage(req, res) {
   const { to, message } = req.body;
 
@@ -196,6 +195,11 @@ export async function handleSendMessage(req, res) {
   } catch (err) {
     res.status(500).json({ error: "Failed to send message" });
   }
+}
+
+export async function checkController(req, res) {
+  const customers = await fetchCustomers();
+  res.json({ status: "Controller is working", customers });
 }
 
 export function verifyWebhook(req, res) {
