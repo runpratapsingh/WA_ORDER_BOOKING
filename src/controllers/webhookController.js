@@ -78,7 +78,7 @@
 
 //   res.sendStatus(200);
 // }
-import { fetchCustomers } from "../api/apiconfig.js";
+import { fetchCustomers, fetchItems } from "../api/apiconfig.js";
 import {
   sendMessage,
   sendLanguageSelection,
@@ -198,8 +198,8 @@ export async function handleSendMessage(req, res) {
 }
 
 export async function checkController(req, res) {
-  const customers = await fetchCustomers();
-  res.json({ status: "Controller is working", customers });
+  const items = await fetchItems();
+  res.json({ status: "Controller is working", items });
 }
 
 export function verifyWebhook(req, res) {
