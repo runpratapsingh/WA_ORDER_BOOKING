@@ -1,9 +1,10 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 
 export const config = {
-  metaToken: "EAAJkBk85o2gBPZAplX3LBZAUFPsFUQBouZAyuTTCRd9oYkgCuJh3sXF5r6ARJD2MBkYhIwdRuIcQzNzjjDQM9sThyQlt8b5z8MHzFsiPYCz19tirYtZBLuguMVgjtydTrstB22yzSLIK3Vgi92deg1lZBCdbGZCUngjcUzHpC8j6pH12hrlpGCkTk2pYpszosfdrY7rRuVpV1ZAKVwmGpTBOTlFdpIzFH2tGBZAPZCwDaEQZDZD",
+  metaToken:
+    "EAAJkBk85o2gBPUTPFIdZBPeWAIkZBtgssyfgdEg0onyW3VVlOZBZClrOh2OZCzn3jZCgtPRjZC57eTBy77ZBYdZC8YlraWpZCK6ss70LlP6ulnQOk2l5fD8fgzyLFMKsuECudPdsZB3j4fEt10G9zVSXQ3RCveIY65BxLCzECB2ggKDagx4qL2dfjZBmHV0vOZAs0ujmzZC6EHTknEjHc8HJqen3sbfpxq8r9sVEsikB5mdpyzXfIZD",
   phoneNumberId: "754571211077181",
   webhookVerifyToken: "myVerify123",
   port: 3000,
