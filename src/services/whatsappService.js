@@ -1,7 +1,7 @@
 import axios from "axios";
 import { config } from "../config/config.js";
 import { fetchCustomers, fetchItems } from "../api/apiconfig.js";
-import { userSessions } from "../controllers/webhookController.js";
+import { updateSession } from "../utils/sessionManager.js";
 const { metaToken, phoneNumberId } = config;
 
 async function sendRequest(payload) {
@@ -73,7 +73,6 @@ export async function sendCustomerList(to, searchKeyword = null) {
   try {
     const rawCustomers = await fetchCustomers();
 
-    // Filter by search keyword if provided
     let filteredCustomers = rawCustomers;
     if (searchKeyword) {
       filteredCustomers = rawCustomers.filter((c) =>
@@ -81,30 +80,21 @@ export async function sendCustomerList(to, searchKeyword = null) {
       );
     }
 
-    // Take first 10
-    // const customers = filteredCustomers.slice(0, 10);
-
-    // // Take only first 10 results
-    // const customers = filteredCustomers.slice(0, 10).map((c, index) => ({
-    //   id: `customer_${index + 1}`,
-    //   title: (c.Name || "Unknown").substring(0, 24), // max 24 chars
-    //   description: (c.Post_Code || "").substring(0, 72), // max 72 chars
-    // }));
-
-    // Initialize session for this user if not exists
-    if (!userSessions[to])
-      userSessions[to] = { step: "customer", orderData: {} };
-    if (!userSessions[to].customerMap) userSessions[to].customerMap = {};
-
-    const rows = filteredCustomers.map((c, i) => {
+    const rows = filteredCustomers.slice(0, 10).map((c, i) => {
       const rowId = `customer_${i + 1}`;
-      userSessions[to].customerMap[rowId] = c; // store full customer
       return {
         id: rowId,
         title: (c.Name || "Unknown").substring(0, 24),
         description: (c.Post_Code || "").substring(0, 72),
       };
     });
+
+    // ✅ Save customerMap in DB
+    const customerMap = {};
+    rows.forEach((row, i) => {
+      customerMap[row.id] = filteredCustomers[i];
+    });
+    await updateSession(to, { customerMap });
 
     const payload = {
       messaging_product: "whatsapp",
@@ -116,12 +106,7 @@ export async function sendCustomerList(to, searchKeyword = null) {
         body: { text: "Please select a customer 👇" },
         action: {
           button: "Choose",
-          sections: [
-            {
-              title: "Customer List",
-              rows: rows,
-            },
-          ],
+          sections: [{ title: "Customer List", rows }],
         },
       },
     };
@@ -186,7 +171,7 @@ export async function sendApproval(to) {
     type: "interactive",
     interactive: {
       type: "button",
-      body: { text: "Do you approve this order?" },
+      body: { text: "Do you want to proceed and create this Sales Order?" },
       action: {
         buttons: [
           { type: "reply", reply: { id: "approve_yes", title: "✅ Yes" } },

@@ -1,11 +1,18 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import webhookRoutes from './routes/webhookRoutes.js';
-import { config } from './config/config.js';
+import express from "express";
+import bodyParser from "body-parser";
+import webhookRoutes from "./routes/webhookRoutes.js";
+import { config } from "./config/config.js";
+import { connectDB } from "./config/db.js";
 
 const app = express();
 
 app.use(bodyParser.json());
-app.use('/', webhookRoutes);
 
-app.listen(config.port, () => console.log(`🚀 Server running on port ${config.port}`));
+// ✅ Connect to MongoDB
+connectDB();
+
+app.use("/", webhookRoutes);
+
+app.listen(config.port, () =>
+  console.log(`🚀 Server running on port ${config.port}`)
+);
